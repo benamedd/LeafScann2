@@ -1,81 +1,45 @@
-<!-- Add this to your <head> section -->
-<link rel="manifest" href="/static/manifest.json">
-<link rel="icon" href="/static/icons/favicon.ico">
-
-<script>
-document.addEventListener("DOMContentLoaded", () => { 
-    const fileInput = document.getElementById("file");
-    const analyzeBtn = document.getElementById("analyze-btn");
-    const refreshBtn = document.getElementById("refresh-btn");
-    const resultSection = document.getElementById("result");
-    const exportBtn = document.createElement("button");
-    exportBtn.textContent = "Export PDF";
-    exportBtn.classList.add("primary-btn");
-    exportBtn.style.display = "none";
-    document.body.appendChild(exportBtn);
-
-    // Register Service Worker
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js')
-            .then(registration => console.log('SW registered:', registration))
-            .catch(error => console.log('SW registration failed:', error));
-    }
-
-    fileInput.addEventListener("change", () => {
-        analyzeBtn.disabled = !fileInput.files.length;
-    });
-
-    analyzeBtn.addEventListener("click", async () => {
-        const file = fileInput.files[0];
-        if (!file) return;
-
-        const formData = new FormData();
-        formData.append("file", file);
-
-        try {
-            // Changed from localhost to relative path
-            const response = await fetch("/upload", {
-                method: "POST",
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
-            
-            if (data.error) {
-                resultSection.innerHTML = `<p class='error'>${data.error}</p>`;
-                exportBtn.style.display = "none";
-            } else {
-                resultSection.innerHTML = `
-                    <h2>Analysis Result</h2>
-                    <p>${data.result.replace(/\n/g, '<br>')}</p>
-                    <img src="${data.image}" alt="Processed Leaf Image">
-                `;
-                exportBtn.style.display = "block";
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            resultSection.innerHTML = `<p class='error'>Failed to analyze the image. ${error.message}</p>`;
-            exportBtn.style.display = "none";
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LeafScan AI</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
         }
-    });
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Éléments avec les IDs EXACTS utilisés dans script.js -->
+    <h1>LeafScan AI</h1>
+    <input type="file" id="file" accept="image/*">
+    <button id="analyze-btn" disabled>Analyser</button>
+    <button id="refresh-btn">Actualiser</button>
+    <div id="result"></div>
 
-    refreshBtn.addEventListener("click", () => {
-        fileInput.value = "";
-        analyzeBtn.disabled = true;
-        resultSection.innerHTML = "";
-        exportBtn.style.display = "none";
-    });
+    <!-- Chargement des scripts à la fin du body -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script>
 
-    exportBtn.addEventListener("click", () => {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text("LeafScan Analysis Report", 10, 10);
-        doc.text(resultSection.innerText, 10, 20);
-        doc.save("LeafScan_Report.pdf");
-    });
-});
-</script>
+    <!-- Script de débogage -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const checkElements = () => {
+                const ids = ['file', 'analyze-btn', 'refresh-btn', 'result'];
+                ids.forEach(id => {
+                    if (!document.getElementById(id)) {
+                        console.error(`Élément manquant: #${id}`);
+                    }
+                });
+            };
+            checkElements();
+        });
+    </script>
+</body>
+</html>
