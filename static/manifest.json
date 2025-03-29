@@ -2,18 +2,18 @@
   "name": "LeafScan AI",
   "short_name": "LeafScan",
   "description": "Analyze plant leaf diseases with AI",
-  "start_url": "./index.html",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4CAF50",
   "icons": [
     {
-      "src": "/staticicons/icon-192x192.png",
+      "src": "/static/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/staticicons/icon-512x512.png",
+      "src": "/static/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }

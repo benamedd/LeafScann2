@@ -1,52 +1,81 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LeafScan AI | Disease Analyzer</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="static/styles.css">
+<!-- Add this to your <head> section -->
+<link rel="manifest" href="/static/manifest.json">
+<link rel="icon" href="/static/icons/favicon.ico">
 
-   <link rel="manifest" href="static/manifest.json">
-   <script>
-    if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/sw.js")
-            .then(() => console.log("Service Worker Registered"))
-            .catch((err) => console.error("Service Worker Registration Failed", err));
+<script>
+document.addEventListener("DOMContentLoaded", () => { 
+    const fileInput = document.getElementById("file");
+    const analyzeBtn = document.getElementById("analyze-btn");
+    const refreshBtn = document.getElementById("refresh-btn");
+    const resultSection = document.getElementById("result");
+    const exportBtn = document.createElement("button");
+    exportBtn.textContent = "Export PDF";
+    exportBtn.classList.add("primary-btn");
+    exportBtn.style.display = "none";
+    document.body.appendChild(exportBtn);
+
+    // Register Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js')
+            .then(registration => console.log('SW registered:', registration))
+            .catch(error => console.log('SW registration failed:', error));
     }
+
+    fileInput.addEventListener("change", () => {
+        analyzeBtn.disabled = !fileInput.files.length;
+    });
+
+    analyzeBtn.addEventListener("click", async () => {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            // Changed from localhost to relative path
+            const response = await fetch("/upload", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            if (data.error) {
+                resultSection.innerHTML = `<p class='error'>${data.error}</p>`;
+                exportBtn.style.display = "none";
+            } else {
+                resultSection.innerHTML = `
+                    <h2>Analysis Result</h2>
+                    <p>${data.result.replace(/\n/g, '<br>')}</p>
+                    <img src="${data.image}" alt="Processed Leaf Image">
+                `;
+                exportBtn.style.display = "block";
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            resultSection.innerHTML = `<p class='error'>Failed to analyze the image. ${error.message}</p>`;
+            exportBtn.style.display = "none";
+        }
+    });
+
+    refreshBtn.addEventListener("click", () => {
+        fileInput.value = "";
+        analyzeBtn.disabled = true;
+        resultSection.innerHTML = "";
+        exportBtn.style.display = "none";
+    });
+
+    exportBtn.addEventListener("click", () => {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("LeafScan Analysis Report", 10, 10);
+        doc.text(resultSection.innerText, 10, 20);
+        doc.save("LeafScan_Report.pdf");
+    });
+});
 </script>
-
-</head>
-<body>
-    <header>
-        <h1>LeafScan</h1>
-        <p>Advanced Leaf Disease Detection</p>
-    </header>
-
-    <section class="upload-section">
-        <label for="file" class="file-label">
-            <i class="fas fa-upload"></i> Select an Image
-        </label>
-        <input type="file" id="file" accept="image/*">
-        <button id="analyze-btn" disabled>Analyze</button>
-        <button id="refresh-btn">Reset</button>
-    </section>
-
-    <section id="result" class="result-section"></section>
-    <section id="result" class="result-section">
-    
-</section>
-
-    <script src="static/script.js"></script>
-	<script>
-    if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("static/sw.js")
-            .then(() => console.log("Service Worker Registered"))
-            .catch((err) => console.error("Service Worker Registration Failed", err));
-    }
-</script>
-
-
-</body>
-</html>
